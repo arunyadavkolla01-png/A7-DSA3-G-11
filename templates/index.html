@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlgoScholar</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="brand-mark">A</span>
+      <div class="brand-text">
+        <h1>AlgoScholar</h1>
+        <p class="subtitle">Aho-Corasick · Smith-Waterman · Dinic · Vertex-Cover · Reservoir</p>
+      </div>
+    </div>
+    <div class="meta-bar">
+      <span><b>{{ total }}</b> papers</span>
+      <span class="dot"></span>
+      <span id="latencyLabel">ready</span>
+      <span class="dot"></span>
+      <span id="scopeLabel">full corpus</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <nav class="tab-bar">
+    <button class="tab active" data-tab="search" onclick="switchTab('search')">Search</button>
+    <button class="tab" data-tab="graph" onclick="switchTab('graph')">Citation Graph</button>
+    <button class="tab" data-tab="metrics" onclick="switchTab('metrics')">Analytics</button>
+    <button class="tab" data-tab="lab" onclick="switchTab('lab')">Algorithm Lab</button>
+  </nav>
+
+  <!-- SEARCH -->
+  <div id="tab-search" class="tab-panel active">
+    <section class="card search-card">
+      <div class="search-row">
+        <div class="input-wrap">
+          <input id="query" type="text" placeholder="Search papers, keywords, methods…" autocomplete="off">
+        </div>
+
+        <label class="topk-wrap">
+          <span class="topk-label">Top-K</span>
+          <input id="topK" type="number" min="1" placeholder="all" value="">
+        </label>
+
+        <button class="btn primary" onclick="recommend()">Search</button>
+        <button class="btn ghost" onclick="clearSearch()">Clear</button>
+      </div>
+
+      <div class="quick-tags" id="quickTags">
+        <span class="label">Try:</span>
+      </div>
+
+      <p class="search-hint">Leave <b>Top-K</b> empty to see every matching paper. Enter a number to cap results.</p>
+    </section>
+
+    <div id="statsBar" class="stats-bar"></div>
+    <section id="results" class="results">
+      <div class="empty">
+        <p class="empty-title">Start searching</p>
+        <p class="empty-sub">Enter a topic above to see ranked papers</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- GRAPH -->
+  <div id="tab-graph" class="tab-panel">
+    <section class="card graph-card">
+      <div class="graph-header">
+        <h2>Interactive Citation Network</h2>
+        <div class="graph-toolbar">
+          <span id="graphScope" class="scope-pill">full corpus</span>
+          <select id="graphSize" onchange="reloadGraph()">
+            <option value="100">100 papers</option>
+            <option value="200" selected>200 papers</option>
+            <option value="400">400 papers</option>
+            <option value="800">800 papers</option>
+          </select>
+          <button class="btn small ghost" id="btnFindPath" type="button">Find Path</button>
+          <button class="btn small ghost" id="btnReleaseNodes" type="button">Release Nodes</button>
+          <button class="btn small ghost" id="btnResetPath" type="button">Reset</button>
+        </div>
+      </div>
+      <div id="graphStats" class="graph-stats"></div>
+      <div id="graphSvgWrap" class="graph-svg-wrap"></div>
+      <div id="pathResult" class="path-result"></div>
+    </section>
+
+    <div class="graph-bottom">
+      <section class="card">
+        <h2>Paper Inspector</h2>
+        <div id="nodeInspector" class="node-inspector">
+          <div class="inspector-empty">Click any node to inspect its paper.</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- METRICS -->
+  <div id="tab-metrics" class="tab-panel">
+    <section class="card">
+      <div class="graph-header">
+        <h2>Graph Metrics</h2>
+        <span id="metricsScope" class="scope-pill">full corpus</span>
+      </div>
+      <div id="metricsGrid" class="metrics-grid"></div>
+    </section>
+    <div class="graph-bottom two-col">
+      <section class="card"><h2>Degree Distribution</h2>
+        <div id="degreeHistogram" class="histogram-wrap"></div></section>
+      <section class="card"><h2>PageRank Distribution</h2>
+        <div id="prHistogram" class="histogram-wrap"></div></section>
+    </div>
+    <section class="card"><h2>Citations Timeline</h2>
+      <div id="trendChart" class="trend-wrap"></div></section>
+  </div>
+
+  <!-- LAB -->
+  <div id="tab-lab" class="tab-panel">
+    <section class="card lab-intro">
+      <h2>Algorithms Reference</h2>
+      <p class="graph-sub">Every algorithm implemented in this system. Below the table are live, editable demos.</p>
+      <div class="about-table-wrap">
+        <table class="about-table">
+          <thead>
+            <tr>
+              <th>Algorithm</th>
+              <th>Family</th>
+              <th>Purpose</th>
+              <th>Complexity</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Aho-Corasick</td><td>String</td><td>Multi-pattern matching</td><td><code>O(n + m + z)</code></td></tr>
+            <tr><td>Suffix Array + Kasai LCP</td><td>String</td><td>Document similarity</td><td><code>O(n log² n) + O(n)</code></td></tr>
+            <tr><td>Wagner-Fischer</td><td>DP</td><td>Edit distance</td><td><code>O(nm)</code></td></tr>
+            <tr><td>Smith-Waterman</td><td>DP</td><td>Local alignment</td><td><code>O(nm)</code></td></tr>
+            <tr><td>Dinic's</td><td>Flow</td><td>Maximum flow</td><td><code>O(V²E)</code></td></tr>
+            <tr><td>Min-Cut</td><td>Flow</td><td>Graph partitioning</td><td><code>O(V²E)</code></td></tr>
+            <tr><td>Hopcroft-Karp</td><td>Flow</td><td>Bipartite matching</td><td><code>O(E√V)</code></td></tr>
+            <tr><td>Vertex Cover 2-approx</td><td>NP</td><td>Cover selection</td><td><code>2-approx</code></td></tr>
+            <tr><td>Greedy Set Cover</td><td>NP</td><td>Result diversity</td><td><code>O(log n)</code></td></tr>
+            <tr><td>Reservoir Sampling</td><td>Randomised</td><td>Stream sampling</td><td><code>O(n)</code></td></tr>
+            <tr><td>Blelloch Scan</td><td>Parallel</td><td>Prefix sum</td><td><code>Work O(n), Span O(log n)</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="lab-grid" id="labGrid"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <div class="footer-col">
+        <div class="footer-brand">
+          <span class="footer-mark">A</span>
+          <div>
+            <div class="footer-title">AlgoScholar</div>
+            <div class="footer-sub">DSA-3 · Semantic Scholar–style platform</div>
+          </div>
+        </div>
+        <p class="footer-desc">
+          Hybrid research paper recommender built on hand-crafted algorithms:
+          BM25 probabilistic retrieval, Aho-Corasick multi-pattern matching,
+          Smith-Waterman local alignment, PageRank, Dinic max-flow,
+          approximation algorithms and parallel primitives. Search drives the
+          citation graph, analytics and timeline in real time.
+        </p>
+      </div>
+      <div class="footer-col">
+        <div class="footer-heading">Team</div>
+        <ul class="footer-list">
+          <li>Aniketh Reddy</li><li>Prashanth</li><li>Arun Yadav</li>
+          <li>Ashwithnath Reddy</li><li>Vivek Reddy</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>KL University · CSE · A7 · Group 11</span>
+      <span>DSA-3</span>
+    </div>
+  </footer>
+</main>
+
+<div id="modal" class="modal-backdrop" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+<script src="{{ url_for('static', filename='graph.js') }}"></script>
+</body>
+</html>
